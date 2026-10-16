@@ -1,0 +1,155 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'tom-select/dist/css/tom-select.bootstrap5.min.css';
+
+:root {
+    --brand: #4a6741;
+    --brand-dark: #3a5233;
+    --brand-bg: #faf6ef;
+    --brand-ink: #2f2b26;
+    --brand-gold: #d4a373;
+    --brand-soft: color-mix(in srgb, var(--brand) 18%, transparent);
+}
+
+body {
+    font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--brand-bg);
+    color: var(--brand-ink);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: .5px;
+}
+
+.hero {
+    background: linear-gradient(135deg, var(--brand-ink) 0%, var(--brand) 60%, var(--brand-gold) 100%);
+    color: #fff;
+}
+
+.hero .display-4 {
+    font-weight: 800;
+}
+
+.bg-brand {
+    background-color: var(--brand);
+}
+
+.text-brand {
+    color: var(--brand);
+}
+
+.text-bg-brand {
+    background-color: var(--brand) !important;
+    color: #fff !important;
+}
+
+.btn-brand {
+    background-color: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+}
+
+.btn-brand:hover {
+    background-color: var(--brand-dark);
+    border-color: var(--brand-dark);
+    color: #fff;
+}
+
+.btn-outline-brand {
+    border-color: var(--brand);
+    color: var(--brand);
+}
+
+.btn-outline-brand:hover {
+    background-color: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+}
+
+.precio {
+    color: var(--brand);
+    font-weight: 700;
+}
+
+.tarjeta-producto {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 .25rem 1rem rgba(47, 43, 38, .08);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.tarjeta-producto:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 .5rem 1.5rem rgba(47, 43, 38, .14);
+}
+
+.tarjeta-producto .card-img-top {
+    object-fit: cover;
+    height: 180px;
+}
+
+.slider-vista-marco {
+    height: 160px;
+    border: 1px dashed color-mix(in srgb, var(--brand) 35%, transparent);
+    border-radius: .75rem;
+    background: #fdfaf5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.slider-vista-fallback {
+    font-size: 2.5rem;
+    color: color-mix(in srgb, var(--brand) 55%, transparent);
+}
+
+.slider-vista-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.badge-promo {
+    position: absolute;
+    top: .75rem;
+    left: .75rem;
+}
+
+.seccion-titulo {
+    font-weight: 800;
+    letter-spacing: -.5px;
+}
+
+.horario-dia {
+    font-weight: 600;
+}
+
+.pagination {
+    --bs-pagination-border-radius: 0.5rem;
+    --bs-pagination-color: var(--brand-ink);
+    --bs-pagination-hover-color: var(--brand);
+    --bs-pagination-focus-color: var(--brand);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--brand) 15%, transparent);
+    --bs-pagination-active-bg: var(--brand);
+    --bs-pagination-active-border-color: var(--brand);
+    --bs-pagination-disabled-color: #adb5bd;
+}
+
+.pagination .page-item + .page-item {
+    margin-left: 0.15rem;
+}
+
+.pagination .page-link {
+    border: none;
+    box-shadow: 0 1px 2px rgba(47, 43, 38, 0.06);
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.pagination .page-link:hover {
+    transform: translateY(-1px);
+    background-color: #ece7dd;
+}

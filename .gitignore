@@ -1,0 +1,33 @@
+# Configuración local y credenciales
+.env
+.env.*
+!.env.example
+
+# Dependencias
+/vendor/
+/node_modules/
+
+# Archivos temporales de Laravel
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Configuración de editores
+.vscode/
+.idea/
+/.ai/
+/.claude/
+/.codex/
+/.cursor/
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/opencode.json
+node_modules
