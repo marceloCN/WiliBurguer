@@ -60,6 +60,8 @@ class BitacoraAccesoController extends Controller
             $datosVista
         ));
 
+        $this->registrarAccion(auth()->user()->empleado->id, 'READ', 'bitacoraacceso', null, '152');
+
         return $pdf->download('bitacora-accesos.pdf');
     }
 

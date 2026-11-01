@@ -57,6 +57,8 @@ class PermisoController extends Controller
 
         $rol->permisos()->sync($permisosValidos);
 
+        $this->registrarAccion(auth()->user()->empleado->id, 'UPDATE', 'rolpermiso', $rol->id, '50');
+
         return redirect()
             ->route('dashboard.permisos.index', ['rol' => $rol->id])
             ->with('exito', "Permisos de {$rol->nombrerol} actualizados correctamente.");

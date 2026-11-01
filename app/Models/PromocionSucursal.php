@@ -45,4 +45,63 @@ class PromocionSucursal extends Model
         return $this->belongsToMany(SucursalProducto::class, 'promocion_sucursal_producto', 'idpromocionsucursal', 'idsucursalproducto')
             ->withPivot('idsucursal', 'cantidad_producto');
     }
+
+    public function etiquetaDescuento(): string
+    {
+        $valor = number_format((float) $this->valordescuento, 2);
+
+        return match ($this->tipodescuento) {
+            'PORCENTAJE' => '-'.number_format((float) $this->valordescuento, 0).'%',
+            'PRECIO_PROMOCIONAL' => 'Bs. '.$valor,
+            default => '-Bs. '.$valor,
+        };
+    }
+
+    public function precioPromocional(float $precioOriginal): float
+    {
+        $valor = (float) $this->valordescuento;
+
+        return match ($this->tipodescuento) {
+            'PORCENTAJE' => $precioOriginal * (1 - $valor / 100),
+            'DESCUENTO_MONTO' => max(0, $precioOriginal - $valor),
+            'PRECIO_PROMOCIONAL' => $valor,
+        };
+    }
+
+    public function subtotalCombo(): float
+    {
+        return round($this->productosSucursal->sum(
+            fn (SucursalProducto $producto): float => (float) $producto->precioproducto
+                * (int) $producto->pivot->cantidad_producto
+        ), 2);
+    }
+
+    public function totalCombo(): float
+    {
+        return round($this->precioPromocional($this->subtotalCombo()), 2);
+    }
+
+    public function descuentoCombo(): float
+    {
+        return max(0, round($this->subtotalCombo() - $this->totalCombo(), 2));
+    }
+
+    public function diasTexto(): string
+    {
+        $nombres = $this->dias->sortBy('diasemana')
+            ->map(fn (PromocionSucursalDia $dia) => mb_strtolower(HorarioSucursal::nombreDia($dia->diasemana)))
+            ->values();
+
+        if ($nombres->isEmpty()) {
+            return 'sin días asignados';
+        }
+
+        if ($nombres->count() === 7) {
+            return 'todos los días';
+        }
+
+        $ultimo = $nombres->pop();
+
+        return 'los '.($nombres->isEmpty() ? $ultimo : $nombres->implode(', ').' y '.$ultimo);
+    }
 }

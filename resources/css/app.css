@@ -153,3 +153,38 @@ body {
     transform: translateY(-1px);
     background-color: #ece7dd;
 }
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Pestañas de pedidos: scroll horizontal limpio en móvil */
+.nav-pills.flex-nowrap {
+    scrollbar-width: thin;
+}
+
+.nav-pills.flex-nowrap::-webkit-scrollbar {
+    height: 4px;
+}
+
+.nav-pills.flex-nowrap::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--brand) 30%, transparent);
+    border-radius: 4px;
+}
+
+/* Catálogo: tarjetas más compactas en móvil */
+@media (max-width: 575.98px) {
+    .tarjeta-producto .card-img-top {
+        height: 120px;
+    }
+}

@@ -20,30 +20,11 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     /**
-     * Modulos agrupados por dominio. Cada modulo define los codigos de permiso
-     * que permiten verlo/operarlo.
+     * Modulos agrupados por dominio. Cada modulo define TODOS los codigos de
+     * permiso que exige su ruta en web.php: si el rol no tiene todos, el
+     * modulo no se muestra (misma regla que el middleware permiso:...).
      */
     private const MODULOS = [
-        'inventario' => [
-            'titulo' => 'Inventario',
-            'descripcion' => 'Controla el stock de insumos por sucursal.',
-            'icono' => '📦',
-            'color' => 'text-bg-brand',
-            'ruta' => 'dashboard.inventario.index',
-            'activo' => true,
-            'restriccion' => 'con_sucursal',
-            'permisos' => ['347'],
-        ],
-        'insumos' => [
-            'titulo' => 'Insumos',
-            'descripcion' => 'Catálogo global de insumos y unidades de medida.',
-            'icono' => '🧂',
-            'color' => 'text-bg-info',
-            'ruta' => 'dashboard.insumos.index',
-            'activo' => true,
-            'restriccion' => 'admin_o_gerente',
-            'permisos' => [],
-        ],
         'pedidos' => [
             'titulo' => 'Generar pedidos',
             'descripcion' => 'Toma pedidos de mesa y para llevar.',
@@ -51,8 +32,82 @@ class DashboardController extends Controller
             'color' => 'text-bg-success',
             'ruta' => 'dashboard.generar-pedidos.index',
             'activo' => true,
+            'grupo' => 'operacion',
             'restriccion' => 'con_sucursal',
             'permisos' => ['500', '501', '502', '505', '506'],
+        ],
+        'caja' => [
+            'titulo' => 'Caja del turno',
+            'descripcion' => 'Abre y cierra la caja, registra movimientos y consulta el historial.',
+            'icono' => '💰',
+            'color' => 'text-bg-warning',
+            'ruta' => 'dashboard.caja.index',
+            'activo' => true,
+            'grupo' => 'operacion',
+            'restriccion' => 'con_sucursal',
+            'permisos' => ['410', '412', '420', '422', '430', '436', '437'],
+        ],
+        'productos' => [
+            'titulo' => 'Productos y categorias',
+            'descripcion' => 'Catalogo central de productos y sus categorias.',
+            'icono' => '🍔',
+            'color' => 'text-bg-primary',
+            'ruta' => 'dashboard.productos.index',
+            'activo' => true,
+            'grupo' => 'catalogo',
+            'permisos' => ['302', '312'],
+        ],
+        'productos-sucursal' => [
+            'titulo' => 'Productos por sucursal',
+            'descripcion' => 'Asigna precios y disponibilidad de cada producto en la sucursal.',
+            'icono' => '🏷️',
+            'color' => 'text-bg-info',
+            'ruta' => 'dashboard.productos-sucursal.index',
+            'activo' => true,
+            'grupo' => 'catalogo',
+            'permisos' => ['317'],
+        ],
+        'promociones' => [
+            'titulo' => 'Promociones',
+            'descripcion' => 'Publica promociones vigentes con sus descuentos y productos.',
+            'icono' => '🎉',
+            'color' => 'text-bg-danger',
+            'ruta' => 'dashboard.promociones.index',
+            'activo' => true,
+            'grupo' => 'catalogo',
+            'permisos' => ['352'],
+        ],
+        'recetas' => [
+            'titulo' => 'Recetas',
+            'descripcion' => 'Vincula cada producto con los insumos que necesita prepararlo.',
+            'icono' => '📖',
+            'color' => 'text-bg-secondary',
+            'ruta' => 'dashboard.recetas.index',
+            'activo' => true,
+            'grupo' => 'catalogo',
+            'permisos' => ['340', '341', '345'],
+        ],
+        'inventario' => [
+            'titulo' => 'Inventario',
+            'descripcion' => 'Controla el stock de insumos por sucursal.',
+            'icono' => '📦',
+            'color' => 'text-bg-brand',
+            'ruta' => 'dashboard.inventario.index',
+            'activo' => true,
+            'grupo' => 'inventario',
+            'restriccion' => 'con_sucursal',
+            'permisos' => ['347'],
+        ],
+        'insumos' => [
+            'titulo' => 'Insumos',
+            'descripcion' => 'Catalogo global de insumos y unidades de medida.',
+            'icono' => '🧂',
+            'color' => 'text-bg-info',
+            'ruta' => 'dashboard.insumos.index',
+            'activo' => true,
+            'grupo' => 'inventario',
+            'restriccion' => 'admin_o_gerente',
+            'permisos' => ['330', '336'],
         ],
         'sucursales' => [
             'titulo' => 'Sucursales',
@@ -61,6 +116,7 @@ class DashboardController extends Controller
             'color' => 'text-bg-brand',
             'ruta' => 'dashboard.sucursales.index',
             'activo' => true,
+            'grupo' => 'administracion',
             'restriccion' => 'admin_o_gerente_con_sucursal',
             'permisos' => ['200', '201', '202', '208'],
         ],
@@ -71,8 +127,9 @@ class DashboardController extends Controller
             'color' => 'text-bg-primary',
             'ruta' => 'dashboard.usuarios.dashboard',
             'activo' => true,
+            'grupo' => 'administracion',
             'restriccion' => 'admin_o_gerente_con_sucursal',
-            'permisos' => ['100', '101', '102', '105'],
+            'permisos' => ['102'],
         ],
         'bitacora-accesos' => [
             'titulo' => 'Bitacora de accesos',
@@ -81,6 +138,7 @@ class DashboardController extends Controller
             'color' => 'text-bg-secondary',
             'ruta' => 'dashboard.bitacora-accesos.index',
             'activo' => true,
+            'grupo' => 'administracion',
             'permisos' => ['150'],
         ],
         'bitacora-acciones' => [
@@ -90,6 +148,7 @@ class DashboardController extends Controller
             'color' => 'text-bg-dark',
             'ruta' => 'dashboard.bitacora-acciones.index',
             'activo' => true,
+            'grupo' => 'administracion',
             'permisos' => ['151'],
         ],
         'configuracion' => [
@@ -99,6 +158,7 @@ class DashboardController extends Controller
             'color' => 'text-bg-warning',
             'ruta' => 'dashboard.configuracion.index',
             'activo' => true,
+            'grupo' => 'administracion',
             'restriccion' => 'solo_admin',
             'permisos' => ['50'],
         ],
@@ -109,6 +169,7 @@ class DashboardController extends Controller
             'color' => 'text-bg-info',
             'ruta' => 'dashboard.permisos.index',
             'activo' => true,
+            'grupo' => 'administracion',
             'restriccion' => 'solo_admin',
             'permisos' => [],
         ],
@@ -116,28 +177,46 @@ class DashboardController extends Controller
 
     public function index(Request $request): View|RedirectResponse
     {
-        $empleado = auth()->user()->empleado->load('rol');
+        $empleado = auth()->user()->empleado->load('rol.permisos');
         $rol = $empleado->rol;
 
-        // El mesero aterriza directamente en la ventana de atencion (Generar
-        // pedidos); si no hay apertura de caja, la vista le muestra el mensaje
-        // correspondiente. Cajero y gerente entran al panel de administracion
-        // (dashboard) como inicio y desde alli abren la caja o generan pedidos.
-        if ($rol->claverol === 'MESERO' && ! $request->has('panel')) {
-            return redirect()->route('dashboard.generar-pedidos.index', ['idsucursal' => $request->integer('idsucursal')]);
+        // El mesero aterriza directo en la ventana de atencion (Generar
+        // pedidos), pero solo si su sucursal ya tiene la caja del turno
+        // abierta: sin una apertura activa no puede tomar pedidos y se queda
+        // en el panel mostrando el aviso. Cajero y gerente entran al panel de
+        // administracion y desde alli abren la caja o generan pedidos.
+        $aperturaAbierta = $rol->claverol === 'MESERO'
+            && $empleado->idsucursal !== null
+            && AperturaCaja::where('estado', 'ABIERTA')
+                ->whereHas('caja', fn ($q) => $q->where('idsucursal', $empleado->idsucursal))
+                ->exists();
+
+        if ($rol->claverol === 'MESERO' && ! $request->has('panel') && $aperturaAbierta) {
+            return redirect()->route('dashboard.generar-pedidos.index', [
+                'idsucursal' => $empleado->idsucursal,
+            ]);
         }
 
+        // Regla del sistema: los usuarios (no administradores) añadidos a una
+        // sucursal son los que ven los menus; sin sucursal no hay menus y el
+        // panel explica el motivo.
         $sinSucursal = ! $this->empleadoTieneSucursal($empleado);
 
-        $permisos = $sinSucursal
+        $codigos = $rol->permisos->where('estado', true)->pluck('codigo');
+
+        $modulos = $sinSucursal
             ? []
-            : $this->modulosDisponibles($rol->permisos->where('estado', true)->pluck('codigo'), $empleado);
+            : $this->modulosDisponibles($codigos, $empleado);
 
         $estadisticas = $sinSucursal
             ? []
             : $this->estadisticasPorRol($empleado, $rol);
 
-        return view('dashboard', compact('empleado', 'rol', 'permisos', 'sinSucursal', 'estadisticas'));
+        $avisoCajaCerrada = $rol->claverol === 'MESERO'
+            && ! $aperturaAbierta
+            && ! $sinSucursal;
+
+        return view('dashboard', compact('empleado', 'rol', 'modulos', 'sinSucursal', 'estadisticas', 'avisoCajaCerrada'));
     }
 
     /** Sucursales que el empleado puede operar (misma regla que promociones/caja). */
@@ -181,19 +260,23 @@ class DashboardController extends Controller
         $modulos = [];
 
         foreach (self::MODULOS as $clave => $modulo) {
-            $tieneAlguno = empty($modulo['permisos'])
+            // Todos los permisos que exige la ruta (igual que el middleware
+            // permiso:... de web.php): si falta uno, el modulo ni se muestra.
+            $puedeVer = empty($modulo['permisos'])
                 ? true
-                : collect($modulo['permisos'])->intersect($codigos)->isNotEmpty();
+                : collect($modulo['permisos'])->diff($codigos)->isEmpty();
 
-            if ($tieneAlguno && isset($modulo['restriccion'])) {
-                $tieneAlguno = $this->cumpleRestriccion($modulo['restriccion'], $empleado);
+            if ($puedeVer && isset($modulo['restriccion'])) {
+                $puedeVer = $this->cumpleRestriccion($modulo['restriccion'], $empleado);
             }
 
+            // La gestion de permisos va tras el middleware admin: solo el
+            // administrador, unico que puede modificar permisos, la ve.
             if ($clave === 'permisos') {
-                $tieneAlguno = $empleado->rol->claverol === 'ADMINISTRADOR';
+                $puedeVer = $empleado->rol->claverol === 'ADMINISTRADOR';
             }
 
-            if ($tieneAlguno) {
+            if ($puedeVer) {
                 $modulos[$clave] = $modulo;
             }
         }

@@ -38,4 +38,10 @@ return [
     'map_tile_referer' => env('MAP_TILE_REFERER', env('APP_URL')),
     'map_tile_verify_ssl' => env('MAP_TILE_VERIFY_SSL', true),
 
+    'wizpay' => [
+        'url' => env('WPAY_API_URL', 'https://api-test.wizpay.app'),
+        'key' => env('WPAY_KEY'),
+        'return_url' => env('WPAY_RETURN_URL', env('APP_URL')),
+    ],
+
 ];

@@ -222,6 +222,8 @@ class InventarioController extends Controller
 
         $tipo = $request->string('tipo', 'estado')->toString();
 
+        $this->registrarAccion($empleado->id, 'READ', 'inventariosucursal', null, '349');
+
         return match ($tipo) {
             'movimientos' => $this->reporteMovimientos($request, $sucursal, $empleado),
             default => $this->reporteEstado($sucursal, $empleado),

@@ -60,6 +60,7 @@ class BitacoraAccionController extends Controller
             compact('acciones', 'filtros'),
             $datosVista
         ));
+        $this->registrarAccion(auth()->user()->empleado->id, 'READ', 'bitacoraaccion', null, '153');
 
         return $pdf->download('bitacora-acciones.pdf');
     }

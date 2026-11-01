@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BitacoraAccesoController;
 use App\Http\Controllers\BitacoraAccionController;
+use App\Http\Controllers\CajaController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
@@ -12,6 +13,10 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\PermisoController;
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ProductoSucursalController;
+use App\Http\Controllers\PromocionController;
+use App\Http\Controllers\RecetaController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
@@ -130,8 +135,103 @@ Route::middleware('auth')->group(function () {
             Route::get('/ayuda/pdf', [InsumoController::class, 'ayudaPdf'])->name('ayuda.pdf');
         });
 
+        // PRODUCTOS Y CATEGORÍAS
+        // Catálogo centralizado de productos, no depende de sucursal: el precio
+        // de venta lo fija cada sucursal en productos-sucursal.
+        // 300 crear categoría. 301 editar. 302 listar. 305 dar de baja.
+        // 310 crear producto. 311 editar. 312 listar. 315 dar de baja.
+        Route::prefix('productos')->name('productos.')->group(function () {
+            Route::get('/', [ProductoController::class, 'index'])->middleware('permiso:312,302')->name('index');
+            Route::post('/', [ProductoController::class, 'store'])->middleware('permiso:310')->name('store');
+
+            // Van antes de {producto}: en Laravel las rutas se resuelven en el
+            // orden en que se registran, así que /categorias debe declararse
+            // antes o caería dentro de /{producto} y daría 404.
+            Route::post('/categorias', [ProductoController::class, 'storeCategoria'])->middleware('permiso:300')->name('categoria.store');
+            Route::post('/categorias/{categoria}', [ProductoController::class, 'updateCategoria'])->middleware('permiso:301')->name('categoria.update');
+            Route::post('/categorias/{categoria}/estado', [ProductoController::class, 'alternarEstadoCategoria'])->middleware('permiso:305')->name('categoria.estado');
+
+            Route::post('/{producto}', [ProductoController::class, 'update'])->middleware('permiso:311')->name('update');
+            Route::post('/{producto}/estado', [ProductoController::class, 'alternarEstado'])->middleware('permiso:315')->name('estado');
+        });
+
+        // RECETAS: vinculan cada producto con los insumos y cantidades que
+        // necesitan para prepararlo. La baja quita el insumo de la receta
+        // detallereceta no tiene columna de estado
+        Route::prefix('recetas')->name('recetas.')->group(function () {
+            Route::get('/', [RecetaController::class, 'index'])->middleware('permiso:340,341,345')->name('index');
+            Route::post('/', [RecetaController::class, 'store'])->middleware('permiso:340')->name('store');
+            Route::post('/{detalleReceta}', [RecetaController::class, 'update'])->middleware('permiso:341')->name('update');
+            Route::post('/{detalleReceta}/baja', [RecetaController::class, 'destroy'])->middleware('permiso:345')->name('baja');
+        });
+
+        // PRODUCTOS POR SUCURSAL
+        // Asigna cada producto del catálogo a una sucursal con el precio con el
+        // que se vende allí y su disponibilidad. El historial de precios de cada
+        // producto se consulta con un botón por fila, en un modal.
+        // 316 registrar. 317 listar. 318 editar precio. 319 alternar disponibilidad.
+        // 320 ver historial de precios.
+        Route::prefix('productos-sucursal')->name('productos-sucursal.')->group(function () {
+            Route::get('/', [ProductoSucursalController::class, 'index'])->middleware('permiso:317')->name('index');
+            Route::post('/', [ProductoSucursalController::class, 'store'])->middleware('permiso:316')->name('store');
+            Route::post('/{productoSucursal}/precio', [ProductoSucursalController::class, 'actualizarPrecio'])->middleware('permiso:318')->name('precio');
+            Route::post('/{productoSucursal}/disponibilidad', [ProductoSucursalController::class, 'alternarDisponibilidad'])->middleware('permiso:319')->name('disponibilidad');
+            Route::get('/{productoSucursal}/historial', [ProductoSucursalController::class, 'historial'])->middleware('permiso:320')->name('historial');
+        });
+
+        // PROMOCIONES POR SUCURSAL
+        // Una promoción (nombre y foto) se publica en una sucursal con su tipo
+        // de descuento, su vigencia, los días en que aplica y los productos que
+        // la componen. La sucursal no se cambia después de crearla.
+        // 350 crear. 351 editar. 352 listar (y generar el reporte PDF de
+        // productos promocionados). 355 dar de baja.
+        Route::prefix('promociones')->name('promociones.')->group(function () {
+            Route::get('/', [PromocionController::class, 'index'])->middleware('permiso:352')->name('index');
+            Route::get('/reporte', [PromocionController::class, 'reporte'])->middleware('permiso:352')->name('reporte');
+            Route::post('/', [PromocionController::class, 'store'])->middleware('permiso:350')->name('store');
+            Route::post('/{promocionSucursal}', [PromocionController::class, 'update'])->middleware('permiso:351')->name('update');
+            Route::post('/{promocionSucursal}/estado', [PromocionController::class, 'alternarActivo'])->middleware('permiso:355')->name('estado');
+        });
+
+        // 500 crear. 501 editar. 502 listar. 505 anular. 506 editar detalle.
+        // El index pide todos los permisos del módulo; el registro solo exige crear.
+        // Ejecutar (PENDIENTE → EJECUTADO), cobrar (venta, pago y estado
+        // COBRADO), anular (solo desde PENDIENTE) y editar el pedido pendiente
+        // son acciones separadas: editar, ejecutar, adicionar y cobrar son 501;
+        // anular es 505. Ver detalle es de solo lectura y pide lo mismo que el
+        // listado, porque está en las cuatro pestañas. Lo cobrado y lo anulado
+        // no tienen acciones que modifiquen el pedido.
         Route::prefix('generar-pedidos')->name('generar-pedidos.')->group(function () {
             Route::get('/', [PedidoController::class, 'index'])->middleware('permiso:500,501,502,505,506')->name('index');
+            Route::post('/', [PedidoController::class, 'store'])->middleware('permiso:500')->name('store');
+            Route::get('/{pedido}/editar', [PedidoController::class, 'editar'])->middleware('permiso:501')->name('editar');
+            Route::put('/{pedido}', [PedidoController::class, 'update'])->middleware('permiso:501')->name('update');
+            Route::get('/{pedido}/detalle', [PedidoController::class, 'detalle'])->middleware('permiso:500,501,502,505,506')->name('detalle');
+            Route::get('/{pedido}/adicionar', [PedidoController::class, 'adicionar'])->middleware('permiso:501')->name('adicionar');
+            Route::post('/{pedido}/adicionar', [PedidoController::class, 'adicionarStore'])->middleware('permiso:501')->name('adicionar.store');
+            Route::post('/{pedido}/ejecutar', [PedidoController::class, 'ejecutar'])->middleware('permiso:501')->name('ejecutar');
+            Route::post('/{pedido}/cobrar', [PedidoController::class, 'cobrar'])->middleware('permiso:501')->name('cobrar');
+            Route::post('/{pedido}/anular', [PedidoController::class, 'anular'])->middleware('permiso:505')->name('anular');
+
+            // WizPay: cobro con tarjeta vía pasarela boliviana.
+            // init → auth-setup → DDC → process → (3DS step-up) → status.
+            Route::prefix('wizpay')->name('wizpay.')->middleware('permiso:501')->group(function () {
+                Route::post('/init', [PedidoController::class, 'wizpayInit'])->name('init');
+                Route::post('/auth-setup', [PedidoController::class, 'wizpayAuthSetup'])->name('auth-setup');
+                Route::post('/process', [PedidoController::class, 'wizpayProcess'])->name('process');
+                Route::get('/status/{reference}', [PedidoController::class, 'wizpayStatus'])->name('status');
+            });
+        });
+
+        // CAJA: apertura y cierre de jornada, movimientos de caja e historial.
+        Route::prefix('caja')->name('caja.')->group(function () {
+            Route::get('/', [CajaController::class, 'index'])->middleware('permiso:410,412,420,422,430,436,437')->name('index');
+            Route::post('/abrir', [CajaController::class, 'store'])->middleware('permiso:410')->name('abrir');
+            Route::post('/{apertura}/cerrar', [CajaController::class, 'cerrar'])->middleware('permiso:430')->name('cerrar');
+            // 436 → ver detalle del cierre: el PDF de la jornada cerrada.
+            Route::get('/{apertura}/reporte', [CajaController::class, 'reporte'])->middleware('permiso:436')->name('reporte');
+            Route::post('/movimientos', [CajaController::class, 'movimientoStore'])->middleware('permiso:420')->name('movimiento.store');
+            Route::post('/movimientos/{movimiento}/baja', [CajaController::class, 'movimientoBaja'])->middleware('permiso:425')->name('movimiento.baja');
         });
 
     });

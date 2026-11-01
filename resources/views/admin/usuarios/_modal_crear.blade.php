@@ -54,7 +54,7 @@
     </div>
 </div>
 
-<script>
+<script type="module">
     $(function () {
         const $modal = $('#crearUsuarioModal');
         const $nombre = $modal.find('.crear-nombre');

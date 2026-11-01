@@ -7,15 +7,14 @@
 /vendor/
 /node_modules/
 
+# Backups y dumps de base de datos
+*.sql
+
 # Archivos temporales de Laravel
 /storage/logs/*
 /storage/framework/cache/*
 /storage/framework/sessions/*
 /storage/framework/views/*
-
-# Archivos del sistema operativo
-.DS_Store
-Thumbs.db
 
 # Configuración de editores
 .vscode/
@@ -30,4 +29,3 @@ Thumbs.db
 /.vscode
 /.zed
 /opencode.json
-node_modules

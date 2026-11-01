@@ -14,6 +14,14 @@
     ];
     $fechaHoy = now()->format('d/m/Y');
     $diaHoy = $nombresDias[now()->format('l')] ?? now()->format('l');
+
+    // Orden en que se presentan los grupos de modulos del sistema.
+    $gruposModulos = [
+        'operacion' => 'Operacion del dia',
+        'catalogo' => 'Catalogo y promociones',
+        'inventario' => 'Inventario e insumos',
+        'administracion' => 'Administracion del sistema',
+    ];
 @endphp
 
 @section('content')
@@ -63,13 +71,14 @@
                         </p>
                     </div>
                     <div class="col-lg-4 text-lg-end">
-                        @if ($rol->claverol === 'MESERO' || $rol->claverol === 'CAJERO' || $rol->claverol === 'GERENTE')
+                        {{-- Accesos directos: solo segun los modulos (permisos) --}}
+                        @if (isset($modulos['pedidos']))
                             <a href="{{ route('dashboard.generar-pedidos.index') }}" class="btn btn-brand btn-lg mb-2 w-100 w-lg-auto">
                                 🧾 Generar pedido
                             </a>
                         @endif
-                        @if ($rol->claverol === 'CAJERO')
-                            <a href="{{ route('dashboard.sucursales.index') }}" class="btn btn-outline-brand w-100 w-lg-auto">
+                        @if (isset($modulos['caja']))
+                            <a href="{{ route('dashboard.caja.index') }}" class="btn btn-outline-brand w-100 w-lg-auto">
                                 💰 Ir a caja
                             </a>
                         @endif
@@ -80,53 +89,27 @@
 
         @include('partials.mensajes')
 
-        @if (isset($permisos['inventario']) || isset($permisos['insumos']))
-            <h2 class="h5 fw-bold mb-3">Gestión de inventario e insumos</h2>
-            <div class="row g-3 mb-4">
-                @if (isset($permisos['inventario']))
-                    <div class="col-12 col-md-6">
-                        <a href="{{ route('dashboard.inventario.index') }}" class="card tarjeta-producto h-100 text-decoration-none">
-                            <div class="card-body d-flex align-items-center gap-4 p-4">
-                                <span class="badge text-bg-brand p-3 rounded-3 fs-2">📦</span>
-                                <div>
-                                    <h3 class="h5 fw-bold mb-1 text-dark">Inventario por sucursal</h3>
-                                    <p class="text-muted small mb-2">
-                                        Revisa el stock actual, registra entradas, salidas y ajustes, y descarga reportes PDF.
-                                    </p>
-                                    <span class="btn btn-sm btn-brand">Ir a inventario</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                @endif
-                @if (isset($permisos['insumos']))
-                    <div class="col-12 col-md-6">
-                        <a href="{{ route('dashboard.insumos.index') }}" class="card tarjeta-producto h-100 text-decoration-none">
-                            <div class="card-body d-flex align-items-center gap-4 p-4">
-                                <span class="badge text-bg-info p-3 rounded-3 fs-2">🧂</span>
-                                <div>
-                                    <h3 class="h5 fw-bold mb-1 text-dark">Catálogo de insumos</h3>
-                                    <p class="text-muted small mb-2">
-                                        Consulta los insumos disponibles en la empresa, sus unidades de medida y la guía de ayuda.
-                                    </p>
-                                    <span class="btn btn-sm btn-info text-white">Ver insumos</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                @endif
-            </div>
-        @endif
-
         @if ($sinSucursal)
             <div class="alert alert-warning shadow-sm d-flex align-items-center gap-3">
                 <span class="fs-4">⏳</span>
                 <div>
-                    <strong>Sin sucursal asignada</strong><br>
-                    Aun no tienes una sucursal asignada. Contacta al administrador para que te asigne una y puedas comenzar a operar.
+                    <strong>No estas añadido en el sistema a ninguna sucursal.</strong><br>
+                    Tu usuario no esta vinculado a una sucursal, por lo que no se muestran los menus del panel.
+                    Contacta al administrador para que te asigne a una sucursal y habilite tus accesos.
                 </div>
             </div>
         @else
+            @if ($avisoCajaCerrada)
+                <div class="alert alert-warning shadow-sm d-flex align-items-center gap-3 mb-4" role="alert">
+                    <span class="fs-4">⚠️</span>
+                    <div>
+                        <strong>Tu sucursal no tiene una caja abierta.</strong><br>
+                        Generar pedidos requiere que el turno este abierto: un cajero o gerente con permiso de caja
+                        debe realizar la apertura primero. Cuando haya una apertura activa entraras directo a tomar pedidos.
+                    </div>
+                </div>
+            @endif
+
             {{-- Estadisticas por rol --}}
             @if (! empty($estadisticas))
                 <h2 class="h5 fw-bold mb-3">Resumen del dia</h2>
@@ -149,102 +132,40 @@
                 </div>
             @endif
 
-            {{-- Modulos / Accesos rapidos --}}
-            @if (! empty($permisos))
-                <h2 class="h5 fw-bold mb-3">Modulos del sistema</h2>
-                <div class="row g-3 mb-4">
-                    @forelse ($permisos as $codigo => $modulo)
-                        @if ($modulo['activo'] && $modulo['ruta'])
-                            <div class="col-12 col-sm-6 col-lg-4 col-xxl-3">
-                                <a href="{{ route($modulo['ruta'], $modulo['parametros'] ?? []) }}"
-                                   class="card tarjeta-producto h-100 text-decoration-none">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center gap-3 mb-2">
-                                            <span class="badge {{ $modulo['color'] }} p-3 rounded-3 fs-4">{{ $modulo['icono'] }}</span>
-                                            <h3 class="h6 fw-bold mb-0 text-dark">{{ $modulo['titulo'] }}</h3>
-                                        </div>
-                                        <p class="text-muted small mb-0">{{ $modulo['descripcion'] }}</p>
+            {{-- Modulos del sistema: en funcion de los permisos del rol.
+                 Sin permisos no se visualiza ningun menu. --}}
+            @if (! empty($modulos))
+                @foreach ($gruposModulos as $claveGrupo => $tituloGrupo)
+                    @php($modulosDelGrupo = collect($modulos)->where('grupo', $claveGrupo))
+                    @if ($modulosDelGrupo->isNotEmpty())
+                        <h2 class="h5 fw-bold mb-3">{{ $tituloGrupo }}</h2>
+                        <div class="row g-3 mb-4">
+                            @foreach ($modulosDelGrupo as $clave => $modulo)
+                                @if ($modulo['activo'] && $modulo['ruta'])
+                                    <div class="col-12 col-sm-6 col-lg-4 col-xxl-3">
+                                        <a href="{{ route($modulo['ruta'], $modulo['parametros'] ?? []) }}"
+                                           class="card tarjeta-producto h-100 text-decoration-none">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center gap-3 mb-2">
+                                                    <span class="badge {{ $modulo['color'] }} p-3 rounded-3 fs-4">{{ $modulo['icono'] }}</span>
+                                                    <h3 class="h6 fw-bold mb-0 text-dark">{{ $modulo['titulo'] }}</h3>
+                                                </div>
+                                                <p class="text-muted small mb-0">{{ $modulo['descripcion'] }}</p>
+                                            </div>
+                                        </a>
                                     </div>
-                                </a>
-                            </div>
-                        @endif
-                    @empty
-                        <div class="col-12">
-                            <div class="alert alert-info shadow-sm mb-0">
-                                Tu rol no tiene modulos asignados en este panel.
-                            </div>
+                                @endif
+                            @endforeach
                         </div>
-                    @endforelse
+                    @endif
+                @endforeach
+            @else
+                <div class="alert alert-info shadow-sm">
+                    <strong>Sin modulos habilitados.</strong><br>
+                    Tu rol no tiene permisos para mostrar menus en este panel. El administrador puede asignarte
+                    los permisos desde la gestion de permisos del sistema.
                 </div>
             @endif
-
-            {{-- Acciones rapidas por rol --}}
-            <h2 class="h5 fw-bold mb-3">Acciones rapidas</h2>
-            <div class="row g-3">
-                @switch($rol->claverol)
-                    @case('ADMINISTRADOR')
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.sucursales.index') }}" class="btn btn-outline-brand w-100 text-start py-3">
-                                🏪 Gestionar sucursales
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.usuarios.dashboard') }}" class="btn btn-outline-primary w-100 text-start py-3">
-                                🧑‍💼 Gestionar empleados
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.configuracion.index') }}" class="btn btn-outline-warning w-100 text-start py-3">
-                                ⚙️ Configurar sitio
-                            </a>
-                        </div>
-                        @break
-
-                    @case('GERENTE')
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.sucursales.index') }}" class="btn btn-outline-brand w-100 text-start py-3">
-                                🏪 Ver mis sucursales
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.generar-pedidos.index') }}" class="btn btn-outline-success w-100 text-start py-3">
-                                🧾 Generar pedido
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.usuarios.dashboard') }}" class="btn btn-outline-primary w-100 text-start py-3">
-                                🧑‍💼 Ver empleados
-                            </a>
-                        </div>
-                        @break
-
-                    @case('CAJERO')
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.sucursales.index') }}" class="btn btn-outline-brand w-100 text-start py-3">
-                                💰 Abrir / cerrar caja
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.generar-pedidos.index') }}" class="btn btn-outline-success w-100 text-start py-3">
-                                🧾 Ver pedidos
-                            </a>
-                        </div>
-                        @break
-
-                    @case('MESERO')
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.generar-pedidos.index') }}" class="btn btn-brand w-100 text-start py-3">
-                                🧾 Tomar pedido
-                            </a>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <a href="{{ route('dashboard.sucursales.index') }}" class="btn btn-outline-brand w-100 text-start py-3">
-                                🪑 Ver mesas
-                            </a>
-                        </div>
-                        @break
-                @endswitch
-            </div>
         @endif
     </div>
 @endsection
